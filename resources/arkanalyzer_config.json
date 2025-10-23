@@ -1,0 +1,8 @@
+{
+  "targetProjectName": "demo",
+  "targetProjectDirectory": "./resources",
+  "ohosSdkPath": "",
+  "kitSdkPath": "",
+  "systemSdkPath": "",
+  "otherSdks": []
+}

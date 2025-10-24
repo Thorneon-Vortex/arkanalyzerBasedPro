@@ -22,6 +22,7 @@ npm install arkanalyzer ts-node
   "otherSdks": []
 }
 ```
+该项目会自动分析目标文件夹下的所有内容
 
 ### 第3步：运行分析
 

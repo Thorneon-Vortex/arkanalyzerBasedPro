@@ -1,18 +1,19 @@
-# 🎯 位置API安全性分析工具
+# 通用API安全性分析工具
 
-> 基于 ArkAnalyzer 框架的位置API调用安全性检测工具
+> 基于 ArkAnalyzer 框架的HarmonyOS/OpenHarmony API调用安全性检测工具
 
-## ✨ 功能简介
+##  功能简介
 
-这个工具可以自动检测 ArkTS 代码中关于 `getCurrentLocation()` API 调用的三个关键安全问题：
+这个工具可以自动检测 ArkTS 代码中**所有HarmonyOS/OpenHarmony API调用**的安全性问题：
 
 | 检查项 | 说明 | 输出示例 |
 |------|-----|--------|
-| **API调用检测** | 是否调用了 `getCurrentLocation()` | ✗ 发现 getCurrentLocation() 调用 |
-| **能力检查** | 是否用 `canIUse()` 检查设备支持 | ✗ 未检测到 canIUse 调用 → 建议使用canIUse |
-| **异常处理** | 是否在 `try-catch` 中包裹 | ✓ 已在 try-catch 中包裹 |
+| **API调用检测** | 检测所有系统API调用 | 发现 5 个不同的API调用需要检查 |
+| **能力检查** | 是否用 `canIUse()` 检查设备支持 | ⚠️ 缺少canIUse检查 |
+| **异常处理** | 是否在 `try-catch` 中包裹 | 🚨 严重警告 - 可能出现多端错误 |
+| **精确定位** | 提供文件名、方法名和行号 | demo/demo.ts: getCurrentLocation() 在方法 checkIn |
 
-## 🚀 快速开始
+##  快速开始
 
 ### 准备环境
 
@@ -35,7 +36,7 @@ npm run build
 node dist/LocationAPIAnalyzer.js
 ```
 
-## 📁 项目结构
+##  项目结构
 
 ```
 LocationAPIAnalyzer/
@@ -53,7 +54,7 @@ LocationAPIAnalyzer/
     └── run.sh                          快速运行脚本
 ```
 
-## 📖 文档说明
+##  文档说明
 
 | 文档 | 耗时 | 内容 |
 |------|------|-----|
@@ -62,7 +63,7 @@ LocationAPIAnalyzer/
 | **USAGE.md** | 20分钟 | 详细步骤说明 |
 | **ADVANCED.md** | 30分钟 | 高级功能扩展 |
 
-## ✅ 完整示例
+##  完整示例
 
 ### 代码示例
 
@@ -95,9 +96,9 @@ class Index {
 【建议】: 建议使用canIUse
 ```
 
-## 💡 安全等级说明
+##  安全等级说明
 
-### ❌ 不安全
+### ❌ 严重警告
 
 ```typescript
 const location = await geoLocationManager.getCurrentLocation();
@@ -106,7 +107,7 @@ console.log(location);
 
 **问题**：无能力检查，无异常处理
 
-### ⚠️ 基本安全
+### ⚠️ 基本安全，建议修改
 
 ```typescript
 try {
@@ -118,7 +119,7 @@ try {
 
 **问题**：缺少能力检查
 
-### ✅ 完全安全
+### 完全安全
 
 ```typescript
 if (canIUse('SystemCapability.Location.Location.Core')) {
@@ -132,7 +133,7 @@ if (canIUse('SystemCapability.Location.Location.Core')) {
 
 **状态**：通过检测 ✓
 
-## 🔧 配置说明
+##  配置说明
 
 编辑 `resources/arkanalyzer_config.json`：
 
@@ -147,20 +148,22 @@ if (canIUse('SystemCapability.Location.Location.Core')) {
 }
 ```
 
-## 🎯 用途
+##  用途
 
-✅ 自动检测位置API使用的安全问题  
+✅ 自动检测**20,848个HarmonyOS API**使用的安全问题  
 ✅ 快速修复代码中的安全隐患  
 ✅ 确保应用在多种设备上的兼容性  
 ✅ 提升应用健壮性和用户体验  
+✅ 支持位置、相机、网络、文件等所有系统API  
+✅ 精确定位问题代码的文件和方法  
 
-## 📞 获取帮助
+##  获取帮助
 
-- 📖 [快速开始指南](./QUICKSTART.md)
-- 📋 [详细使用说明](./USAGE.md)
-- 🚀 [高级用法](./ADVANCED.md)
+-  [快速开始指南](./QUICKSTART.md)
+-  [详细使用说明](./USAGE.md)
+-  [高级用法](./ADVANCED.md)
 
-## 📄 许可证
+##  许可证
 
 Apache License 2.0
 

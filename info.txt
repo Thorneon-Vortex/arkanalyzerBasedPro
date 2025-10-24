@@ -1,16 +1,38 @@
 
-========== 位置API安全性分析 开始 ==========
+========== 通用API安全性分析 开始 ==========
 
-✗ 发现 getCurrentLocation() 调用
-✗ 【建议】 未检测到 canIUse("SystemCapability.Location.Location.Core") 调用
-✓ getCurrentLocation() 调用已在 try-catch 中包裹
+发现 5 个不同的API调用需要检查:
+  - getCurrentLocation
+  - getLastLocation
+  - getCameraManager
+  - getSupportedCameras
+  - isLocationEnabled
+
+⚠️  缺少canIUse检查:
+   ⚠️  demo/demo.ts: getCurrentLocation() 在方法 checkIn (位置未知)
+      建议添加 canIUse("SystemCapability.Location.Location.Core")
+   ⚠️  demo/test_multiple_apis.ts: getCameraManager() 在方法 testCameraAPIs (位置未知)
+      建议添加 canIUse("SystemCapability.Multimedia.Camera.Core")
+   ⚠️  demo/test_multiple_apis.ts: getSupportedCameras() 在方法 testCameraAPIs (位置未知)
+      建议添加 canIUse("SystemCapability.Multimedia.Camera.Core")
+   ⚠️  demo/test_multiple_apis.ts: isLocationEnabled() 在方法 testWithoutCanIUse (位置未知)
+      建议添加 canIUse("SystemCapability.Location.Location.Core")
+
+✅ 正确使用的API:
+   ✅ demo/test_multiple_apis.ts: getCurrentLocation() 在方法 testLocationAPIs - 使用规范
+   ✅ demo/test_multiple_apis.ts: getLastLocation() 在方法 testLocationAPIs - 使用规范
 
 ========== 分析结果总结 ==========
-1. 是否有 getCurrentLocation() 调用: 是
-2. 是否使用了 canIUse 检查: 否
-3. 是否在 try-catch 中包裹: 是
+总API调用数: 5
+API调用实例数: 7
+使用canIUse的实例数: 5
+正确使用canIUse的实例数: 3
+使用try-catch的实例数: 6
 
 【建议】:
-  - 建议使用canIUse
+  - 建议: demo/demo.ts中checkIn方法的getCurrentLocation()添加canIUse检查
+  - 建议: demo/test_multiple_apis.ts中testCameraAPIs方法的getCameraManager()添加canIUse检查
+  - 建议: demo/test_multiple_apis.ts中testCameraAPIs方法的getSupportedCameras()添加canIUse检查
+  - 建议: demo/test_multiple_apis.ts中testWithoutCanIUse方法的isLocationEnabled()添加canIUse检查
 
 ========== 分析结束 ==========

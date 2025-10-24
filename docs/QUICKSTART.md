@@ -1,6 +1,6 @@
 # ⚡ 快速开始
 
-## 🎯 3步钟快速运行
+## 🎯 3步钟快速运行通用API安全性分析
 
 ### 第1步：安装依赖
 
@@ -32,31 +32,46 @@ npx ts-node src/LocationAPIAnalyzer.ts
 ## 📊 预期输出
 
 ```
-========== 位置API安全性分析 开始 ==========
+========== 通用API安全性分析 开始 ==========
 
-✗ 发现 getCurrentLocation() 调用
-✗ 【建议】 未检测到 canIUse("SystemCapability.Location.Location.Core") 调用
-✓ getCurrentLocation() 调用已在 try-catch 中包裹
+发现 5 个不同的API调用需要检查:
+  - getCurrentLocation
+  - getLastLocation
+  - getCameraManager
+  - getSupportedCameras
+  - isLocationEnabled
+
+🚨 严重警告 - 可能出现多端错误:
+   ❌ demo/test_multiple_apis.ts: getCurrentLocation() 在方法 testWithoutTryCatch (位置未知)
+      缺少 canIUse("SystemCapability.Location.Location.Core") 且缺少 try-catch
+
+⚠️  缺少canIUse检查:
+   ⚠️  demo/demo.ts: getCurrentLocation() 在方法 checkIn (位置未知)
+      建议添加 canIUse("SystemCapability.Location.Location.Core")
+
+✅ 正确使用的API:
+   ✅ demo/test_multiple_apis.ts: getCurrentLocation() 在方法 testLocationAPIs - 使用规范
 
 ========== 分析结果总结 ==========
-1. 是否有 getCurrentLocation() 调用: 是
-2. 是否使用了 canIUse 检查: 否
-3. 是否在 try-catch 中包裹: 是
-
-【建议】:
-  - 建议使用canIUse
-
-========== 分析结束 ==========
+总API调用数: 5
+API调用实例数: 7
+使用canIUse的实例数: 5
+正确使用canIUse的实例数: 3
+使用try-catch的实例数: 6
 ```
 
 ## ✨ 结果解读
 
-- ✓ = 检查通过
-- ✗ = 检查失败需要改进
-- 【建议】= 需要改进的地方
-- 【严重】= 严重安全问题
+- 🚨 **严重警告**：API调用既没有`canIUse`检查也没有`try-catch`包裹，可能导致多端兼容性问题
+- ⚠️ **缺少canIUse检查**：建议添加设备能力检查以提高兼容性
+- ✅ **正确使用**：API调用规范，有适当的安全检查
+
+## 🎉 恭喜！
+
+你已经成功运行了通用API安全性分析工具！
 
 ## 📚 下一步
 
-- 详细了解 → [USAGE.md](./USAGE.md)
-- 高级用法 → [ADVANCED.md](./ADVANCED.md)
+- 📋 查看 [详细使用说明](./USAGE.md) 了解更多功能
+- 🔧 查看 [高级用法](./ADVANCED.md) 进行自定义配置
+- 📊 分析结果已自动保存到 `info.txt` 文件

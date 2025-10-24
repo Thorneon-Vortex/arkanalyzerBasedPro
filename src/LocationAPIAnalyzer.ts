@@ -71,99 +71,7 @@ export class UniversalAPIAnalyzer {
     return scene;
   }
 
-  /**
-   * 获取代码中所有的canIUse调用及其参数
-   */
-  private getCanIUseCalls(scene: Scene): Set<string> {
-    const canIUseCalls = new Set<string>();
-    const methods = scene.getMethods();
-    
-    for (const method of methods) {
-      const body = method.getBody();
-      if (!body) continue;
 
-      const cfg = body.getCfg();
-      const stmts = cfg.getStmts();
-
-      for (const stmt of stmts) {
-        const exprs = stmt.getExprs();
-        for (const expr of exprs) {
-          if ((expr instanceof ArkStaticInvokeExpr || expr instanceof ArkInstanceInvokeExpr)) {
-            try {
-              const methodSig = (expr as any).getMethodSignature();
-              if (methodSig && methodSig.getMethodSubSignature) {
-                const methodName = methodSig.getMethodSubSignature().getMethodName();
-                if (methodName === 'canIUse') {
-                  // 获取canIUse的参数
-                  const args = (expr as any).getArgs();
-                  for (const arg of args) {
-                    const argStr = arg.toString();
-                    // 提取SystemCapability字符串
-                    const match = argStr.match(/SystemCapability\.[A-Za-z0-9.]+/);
-                    if (match) {
-                      canIUseCalls.add(match[0]);
-                    }
-                  }
-                }
-              }
-            } catch (e) {
-              continue;
-            }
-          }
-        }
-      }
-    }
-    
-    return canIUseCalls;
-  }
-
-  /**
-   * 检查 getCurrentLocation 调用是否在 try-catch 中
-   */
-  private checkTryCatchWrapping(scene: Scene): boolean {
-    const methods = scene.getMethods();
-    let foundTryCatch = false;
-    
-    for (const method of methods) {
-      const body = method.getBody();
-      if (!body) continue;
-
-      const cfg = body.getCfg();
-      const stmts = cfg.getStmts();
-
-      for (const stmt of stmts) {
-        const stmtType = stmt.constructor.name;
-        const stmtStr = stmt.toString();
-        
-        // ArkAnalyzer 中的 try-catch 相关语句
-        // 1. 检查语句类型（可能包含Try、Catch、TryCatch等）
-        if (stmtType.includes('Catch') || stmtType.includes('Try') || 
-            stmtType.includes('TryCatch') || stmtType.includes('Throw')) {
-          foundTryCatch = true;
-          break;
-        }
-
-        // 2. 检查语句字符串中的关键字
-        // ArkAnalyzer 会将异常处理表示为 "caughtexception" 
-        if (stmtStr.includes('caughtexception') || stmtStr.includes('caught')) {
-          foundTryCatch = true;
-          break;
-        }
-        
-        // 3. 检查throw语句
-        if (stmtStr.includes('throw')) {
-          foundTryCatch = true;
-          break;
-        }
-      }
-      
-      if (foundTryCatch) {
-        break;
-      }
-    }
-    
-    return foundTryCatch;
-  }
 
   /**
    * 按方法分析API调用
@@ -281,15 +189,66 @@ export class UniversalAPIAnalyzer {
                   let fileName: string | undefined;
                   
                   try {
-                    // 从表达式中获取位置信息
+                    // 尝试多种方式获取位置信息
                     const exprStr = expr.toString();
                     const stmtStr = stmt.toString();
+                    
+                    // 调试信息：打印表达式和语句的字符串表示（可选）
+                    // console.log(`[DEBUG] API: ${methodName}`);
+                    // console.log(`[DEBUG] Expr: ${exprStr}`);
+                    // console.log(`[DEBUG] Stmt: ${stmtStr}`);
+                    
+                    // 方法1: 从表达式字符串中提取行号
+                    let lineMatch = exprStr.match(/:(\d+):/);
+                    if (!lineMatch) {
+                      lineMatch = stmtStr.match(/:(\d+):/);
+                    }
+                    if (lineMatch) {
+                      lineNumber = parseInt(lineMatch[1]);
+                      console.log(`[DEBUG] Found line number from string: ${lineNumber}`);
+                    }
+                    
+                    // 方法2: 尝试从ArkAnalyzer的位置信息获取
+                    if (!lineNumber && (expr as any).getLocation) {
+                      try {
+                        const location = (expr as any).getLocation();
+                        if (location && location.getLineNumber) {
+                          lineNumber = location.getLineNumber();
+                        }
+                      } catch (e) { /* ignore */ }
+                    }
+                    
+                    // 方法3: 从语句中获取位置信息
+                    if (!lineNumber && (stmt as any).getLocation) {
+                      try {
+                        const location = (stmt as any).getLocation();
+                        if (location && location.getLineNumber) {
+                          lineNumber = location.getLineNumber();
+                        }
+                      } catch (e) { /* ignore */ }
+                    }
                     
                     // 从方法签名中提取文件名
                     const methodSigStr = methodSignature.toString();
                     const fileMatch = methodSigStr.match(/@([^:]+):/);
                     if (fileMatch) {
                       fileName = fileMatch[1];
+                    }
+                    
+                    // 如果还是没有行号，尝试从字符串中解析更多格式
+                    if (!lineNumber) {
+                      // 尝试匹配 @filename:line:column 格式
+                      const locationMatch = methodSigStr.match(/@[^:]+:(\d+):/);
+                      if (locationMatch) {
+                        lineNumber = parseInt(locationMatch[1]);
+                      }
+                    }
+                    
+                    // 如果ArkAnalyzer无法提供行号，尝试从源代码中查找
+                    if (!lineNumber && fileName) {
+                      const extractedMethodName = this.extractMethodName(methodSignature.toString());
+                      lineNumber = this.findApiLineNumber(fileName, methodName, extractedMethodName);
+                      // 成功从源代码中找到行号
                     }
                   } catch (e) {
                     // 无法获取位置信息时继续
@@ -486,6 +445,58 @@ export class UniversalAPIAnalyzer {
     const parts = methodSignature.split('.');
     const lastPart = parts[parts.length - 1];
     return lastPart.replace(/\([^)]*\)$/, '');
+  }
+
+  /**
+   * 从源文件中查找API调用的行号
+   */
+  private findApiLineNumber(fileName: string, apiName: string, methodName: string): number | undefined {
+    try {
+      // 构建文件路径
+      const configPath = path.join(__dirname, '../resources/arkanalyzer_config.json');
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      const projectDir = path.resolve(__dirname, '..', config.targetProjectDirectory);
+      const filePath = path.join(projectDir, fileName);
+      
+      if (!fs.existsSync(filePath)) {
+        return undefined;
+      }
+      
+      const sourceCode = fs.readFileSync(filePath, 'utf8');
+      const lines = sourceCode.split('\n');
+      
+      // 查找包含API调用的行
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // 检查这一行是否包含API调用
+        if (line.includes(apiName) && line.includes('(')) {
+          // 进一步验证这是一个方法调用而不是注释或字符串
+          const trimmedLine = line.trim();
+          if (!trimmedLine.startsWith('//') && !trimmedLine.startsWith('*')) {
+            // 检查是否在正确的方法内（简单的启发式方法）
+            // 向上查找方法定义
+            for (let j = i; j >= 0; j--) {
+              const prevLine = lines[j].trim();
+              if (prevLine.includes(methodName) && prevLine.includes('(')) {
+                return i + 1; // 行号从1开始
+              }
+              // 如果遇到另一个方法定义，停止查找
+              if (j < i && (prevLine.includes('async ') || prevLine.includes('function ') || 
+                  (prevLine.includes('(') && prevLine.includes(')') && prevLine.includes('{')))) {
+                break;
+              }
+            }
+            // 如果没找到明确的方法边界，返回当前行
+            return i + 1;
+          }
+        }
+      }
+      
+      return undefined;
+    } catch (error) {
+      // 无法从源代码中获取行号
+      return undefined;
+    }
   }
 
   /**

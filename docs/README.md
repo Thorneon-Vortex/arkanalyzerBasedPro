@@ -84,17 +84,27 @@ class Index {
 
 ### 分析结果
 
-| 检查项 | 结果 |
-|------|------|
-| getCurrentLocation() 调用 | ✗ 有 |
-| canIUse 检查 | ✗ 无 |
-| try-catch 包裹 | ✓ 有 |
 
-### 建议
+========== 通用API安全性分析 开始 ==========
 
-```
-【建议】: 建议使用canIUse
-```
+发现 1 个不同的API调用需要检查:
+  - getCurrentLocation
+
+⚠️  缺少canIUse检查:
+   ⚠️  demo/demo.ts: getCurrentLocation() 在方法 checkIn (位置未知)
+      建议添加 canIUse("SystemCapability.Location.Location.Core")
+
+========== 分析结果总结 ==========
+总API调用数: 1
+API调用实例数: 1
+使用canIUse的实例数: 0
+正确使用canIUse的实例数: 0
+使用try-catch的实例数: 1
+
+【建议】:
+  - 建议: demo/demo.ts中checkIn方法的getCurrentLocation()添加canIUse检查
+
+========== 分析结束 ==========
 
 ##  安全等级说明
 
@@ -150,12 +160,12 @@ if (canIUse('SystemCapability.Location.Location.Core')) {
 
 ##  用途
 
-✅ 自动检测**20,848个HarmonyOS API**使用的安全问题  
-✅ 快速修复代码中的安全隐患  
-✅ 确保应用在多种设备上的兼容性  
-✅ 提升应用健壮性和用户体验  
-✅ 支持位置、相机、网络、文件等所有系统API  
-✅ 精确定位问题代码的文件和方法  
+ 自动检测**20,848个HarmonyOS API**使用的安全问题  
+ 快速修复代码中的安全隐患  
+ 确保应用在多种设备上的兼容性  
+ 提升应用健壮性和用户体验  
+ 支持位置、相机、网络、文件等所有系统API  
+ 精确定位问题代码的文件和方法  
 
 ##  获取帮助
 

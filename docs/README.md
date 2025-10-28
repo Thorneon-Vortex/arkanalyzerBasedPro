@@ -58,10 +58,10 @@ LocationAPIAnalyzer/
 
 | 文档 | 耗时 | 内容 |
 |------|------|-----|
-| **README.md** (本文件) | 5分钟 | 项目总体介绍 |
-| **QUICKSTART.md** | 10分钟 | 快速上手指南 |
-| **USAGE.md** | 20分钟 | 详细步骤说明 |
-| **ADVANCED.md** | 30分钟 | 高级功能扩展 |
+| **README.md** (本文件) | 项目总体介绍 |
+| **QUICKSTART.md**  | 快速上手指南 |
+| **USAGE.md**| 详细步骤说明 |
+| **ADVANCED.md** | 高级功能扩展 |
 
 ##  完整示例
 
